@@ -127,7 +127,14 @@ const CashbookPage: React.FC = () => {
             return 0;
         });
 
-        let runningBal = 0;
+        let initialCash = 0;
+        if (data.settings && data.settings.initialOpeningBalance && data.settings.initialOpeningBalance.cash) {
+            initialCash = (data.settings.initialOpeningBalance.cash.balvatika || 0) + 
+                          (data.settings.initialOpeningBalance.cash.primary || 0) + 
+                          (data.settings.initialOpeningBalance.cash.middle || 0);
+        }
+
+        let runningBal = initialCash;
         return combined.map(e => {
              if (e.type === 'Receipt') runningBal += e.amount;
              else if (e.type === 'Payment') runningBal -= e.amount;
@@ -218,10 +225,22 @@ const CashbookPage: React.FC = () => {
         });
 
         const prevEntries = allCombinedEntries.filter(e => e.date < filterMonth + '-01');
-        const opBal = prevEntries.length > 0 ? prevEntries[prevEntries.length - 1].balance : 0;
-        const currentBal = allCombinedEntries.length > 0 ? allCombinedEntries[allCombinedEntries.length - 1].balance : 0;
         
-        return { totalReceipts: receipts, totalPayments: payments, closingBalance: currentBal, openingBalance: opBal };
+        let initialCash = 0;
+        if (data.settings && data.settings.initialOpeningBalance && data.settings.initialOpeningBalance.cash) {
+            initialCash = (data.settings.initialOpeningBalance.cash.balvatika || 0) + 
+                          (data.settings.initialOpeningBalance.cash.primary || 0) + 
+                          (data.settings.initialOpeningBalance.cash.middle || 0);
+        }
+
+        const opBal = prevEntries.length > 0 ? prevEntries[prevEntries.length - 1].balance : initialCash;
+        
+        let monthEndBalance = opBal;
+        if (monthEntries.length > 0) {
+            monthEndBalance = monthEntries[monthEntries.length - 1].balance;
+        }
+
+        return { totalReceipts: receipts, totalPayments: payments, closingBalance: monthEndBalance, openingBalance: opBal };
     }, [allCombinedEntries, monthEntries, filterMonth]);
 
     const [pdfPreviewData, setPdfPreviewData] = useState<{ url: string, blob: Blob, filename: string, type: 'receipt' | 'report', id?: string } | null>(null);
