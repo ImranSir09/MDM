@@ -85,25 +85,38 @@ const CashbookPage: React.FC = () => {
             })
             .filter(Boolean) as (CashbookEntry & { isAuto?: boolean })[];
 
-        const autoPayments = (data.entries || [])
-            .map(e => {
-                 if (!e.consumption || (e.consumption.total || 0) <= 0) return null;
-                 return {
-                     id: `auto-pay-${e.id}`,
-                     voucherNo: `PAY-${e.date.replace(/-/g, '')}`,
-                     date: e.date,
-                     type: 'Payment' as TransactionType,
-                     headOfAccount: 'Cooking Cost' as HeadOfAccount,
-                     description: `Daily MDM Cost (${e.totalPresent} students)`,
-                     amount: e.consumption.total,
-                     paymentMode: 'Cash' as PaymentMode,
-                     paidTo: 'Daily Consumption',
-                     balance: 0,
-                     enteredBy: 'System',
-                     isAuto: true
-                 };
-            })
-            .filter(Boolean) as (CashbookEntry & { isAuto?: boolean })[];
+        const monthlyPayments = new Map<string, { totalAmount: number, totalStudents: number, lastDate: string }>();
+
+        (data.entries || []).forEach(e => {
+            if (!e.consumption || (e.consumption.total || 0) <= 0) return;
+            const month = e.date.substring(0, 7);
+            if (!monthlyPayments.has(month)) {
+                monthlyPayments.set(month, { totalAmount: 0, totalStudents: 0, lastDate: e.date });
+            }
+            const current = monthlyPayments.get(month)!;
+            current.totalAmount += e.consumption.total;
+            current.totalStudents += e.totalPresent;
+            if (e.date > current.lastDate) {
+                current.lastDate = e.date;
+            }
+        });
+
+        const autoPayments = Array.from(monthlyPayments.entries()).map(([month, data]) => {
+             return {
+                 id: `auto-pay-${month}`,
+                 voucherNo: `PAY-${month.replace(/-/g, '')}`,
+                 date: data.lastDate,
+                 type: 'Payment' as TransactionType,
+                 headOfAccount: 'Cooking Cost' as HeadOfAccount,
+                 description: `Aggregated MDM Cost for ${month} (${data.totalStudents} students total)`,
+                 amount: data.totalAmount,
+                 paymentMode: 'Cash' as PaymentMode,
+                 paidTo: 'Monthly Consumption',
+                 balance: 0,
+                 enteredBy: 'System',
+                 isAuto: true
+             };
+        }) as (CashbookEntry & { isAuto?: boolean })[];
 
         const combined = [...explicitEntries, ...autoReceipts, ...autoPayments];
         
@@ -300,7 +313,7 @@ const CashbookPage: React.FC = () => {
             doc.setFillColor(248, 250, 252);
             doc.setDrawColor(226, 232, 240);
             doc.rect(14, 40, 90, 8, 'FD');
-            doc.text(`Opening Balance: Rs. ${openingBalance.toFixed(2)}`, 16, 46);
+            doc.text(`Opening Balance: Rs. ${openingBalance < 0 ? '-' : ''}${Math.abs(openingBalance).toFixed(2)}`, 16, 46);
 
             const tableData = monthEntries.map(e => [
                 new Date(e.date).toLocaleDateString('en-IN'),
@@ -308,7 +321,7 @@ const CashbookPage: React.FC = () => {
                 e.headOfAccount + '\n' + e.description,
                 e.type === 'Receipt' ? e.amount.toFixed(2) : '-',
                 e.type === 'Payment' ? e.amount.toFixed(2) : '-',
-                e.balance.toFixed(2)
+                `${e.balance < 0 ? '-' : ''}${Math.abs(e.balance).toFixed(2)}`
             ]);
 
             (doc as any).autoTable({
@@ -335,7 +348,7 @@ const CashbookPage: React.FC = () => {
             doc.text(`Total Payments: Rs. ${totalPayments.toFixed(2)}`, 16, finalY + 16);
             doc.setTextColor(50, 50, 50);
             doc.setFont('inter', 'bold');
-            doc.text(`Closing Balance: Rs. ${closingBalance.toFixed(2)}`, 16, finalY + 21);
+            doc.text(`Closing Balance: Rs. ${closingBalance < 0 ? '-' : ''}${Math.abs(closingBalance).toFixed(2)}`, 16, finalY + 21);
             doc.setFont('inter', 'normal');
 
             doc.text('Signature (Headmaster)', 14, finalY + 45);
@@ -377,8 +390,10 @@ const CashbookPage: React.FC = () => {
                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                         <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl p-3 shadow-sm flex flex-col justify-center">
                             <p className="text-xs text-slate-500 dark:text-slate-400">Current Balance</p>
-                            <p className={`text-lg font-bold ${closingBalance < 0 ? 'text-red-500' : 'text-indigo-600 dark:text-indigo-400'}`}>₹{closingBalance.toFixed(2)}</p>
-                            {closingBalance < 0 && <span className="text-[10px] text-red-500">Negative Balance!</span>}
+                            <p className={`text-lg font-bold ${closingBalance < 0 ? 'text-red-500' : 'text-indigo-600 dark:text-indigo-400'}`}>
+                                {closingBalance < 0 ? '-' : ''}₹{Math.abs(closingBalance).toFixed(2)}
+                            </p>
+                            {closingBalance < 0 && <span className="text-[10px] text-red-500">Deficit Balance</span>}
                         </div>
                         <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl p-3 shadow-sm flex flex-col justify-center">
                             <p className="text-xs text-slate-500 dark:text-slate-400">Mo. Incoming</p>
@@ -439,7 +454,7 @@ const CashbookPage: React.FC = () => {
                                                     {entry.type === 'Payment' ? entry.amount.toFixed(2) : '-'}
                                                 </td>
                                                 <td className={`p-3 text-right font-bold ${entry.balance < 0 ? 'text-red-500' : ''}`}>
-                                                    {entry.balance.toFixed(2)}
+                                                    {entry.balance < 0 ? '-' : ''}₹{Math.abs(entry.balance).toFixed(2)}
                                                 </td>
                                                 <td className="p-3 text-center space-y-1">
                                                     {entry.type === 'Receipt' && (

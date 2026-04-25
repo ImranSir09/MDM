@@ -15,6 +15,7 @@ const LoginPage: React.FC = () => {
     const { showToast } = useToast();
     
     const [password, setPassword] = useState('');
+    const [loginError, setLoginError] = useState('');
     const [isForgotModalOpen, setForgotModalOpen] = useState(false);
     const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
     const [securityAnswer, setSecurityAnswer] = useState('');
@@ -25,13 +26,14 @@ const LoginPage: React.FC = () => {
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
+        setLoginError('');
         try {
             const success = await login(password);
             if (!success) {
-                showToast('Incorrect password.', 'error');
+                setLoginError('Incorrect password.');
             }
         } catch (error) {
-            showToast('An error occurred during login.', 'error');
+            setLoginError('An error occurred during login.');
         } finally {
             setIsLoading(false);
         }
@@ -111,13 +113,17 @@ const LoginPage: React.FC = () => {
                     </div>
                     <Card>
                         <form onSubmit={handleLogin} className="space-y-4">
-                            <PasswordInput
-                                label="Password"
-                                id="password"
-                                value={password}
-                                onChange={e => setPassword(e.target.value)}
-                                required
-                            />
+                            <div>
+                                <PasswordInput
+                                    label="Password"
+                                    id="password"
+                                    value={password}
+                                    onChange={e => { setPassword(e.target.value); setLoginError(''); }}
+                                    required
+                                    className={loginError ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : ''}
+                                />
+                                {loginError && <p className="mt-1 text-xs text-red-500">{loginError}</p>}
+                            </div>
                             <Button type="submit" className="w-full" disabled={isLoading || password.length === 0}>
                                 {isLoading ? 'Logging in...' : 'Login'}
                             </Button>

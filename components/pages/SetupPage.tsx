@@ -188,41 +188,53 @@ const SetupPage: React.FC = () => {
 
                             {/* Profile Section */}
                             <div className="space-y-4 pt-2">
-                                <Input
-                                    label="MDM Incharge Name"
-                                    id="username"
-                                    value={username}
-                                    onChange={e => setUsername(e.target.value)}
-                                    onBlur={() => validate('username')}
-                                    required
-                                    className={errors.username ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : ''}
-                                />
-                                <Input
-                                    label="Contact Number"
-                                    id="contact"
-                                    type="tel"
-                                    maxLength={10}
-                                    value={contact}
-                                    onChange={e => setContact(e.target.value.replace(/[^0-9]/g, ''))}
-                                    onBlur={() => validate('contact')}
-                                    className={errors.contact ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : ''}
-                                />
-                                <PasswordInput
-                                    label="Create Password (min. 6)"
-                                    id="password"
-                                    value={password}
-                                    onChange={e => setPassword(e.target.value)}
-                                    onBlur={() => validate('password')}
-                                    required
-                                />
-                                <PasswordInput
-                                    label="Confirm Password"
-                                    id="confirm-password"
-                                    value={confirmPassword}
-                                    onChange={e => setConfirmPassword(e.target.value)}
-                                    onBlur={() => validate('confirmPassword')}
-                                    required
-                                />
+                                <div>
+                                    <Input
+                                        label="MDM Incharge Name"
+                                        id="username"
+                                        value={username}
+                                        onChange={e => setUsername(e.target.value)}
+                                        onBlur={() => validate('username')}
+                                        required
+                                        className={errors.username ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : ''}
+                                    />
+                                    {errors.username && <p className="mt-1 text-xs text-red-500">{errors.username}</p>}
+                                </div>
+                                <div>
+                                    <Input
+                                        label="Contact Number"
+                                        id="contact"
+                                        type="tel"
+                                        maxLength={10}
+                                        value={contact}
+                                        onChange={e => setContact(e.target.value.replace(/[^0-9]/g, ''))}
+                                        onBlur={() => validate('contact')}
+                                        className={errors.contact ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500' : ''}
+                                    />
+                                    {errors.contact && <p className="mt-1 text-xs text-red-500">{errors.contact}</p>}
+                                </div>
+                                <div>
+                                    <PasswordInput
+                                        label="Create Password (min. 6)"
+                                        id="password"
+                                        value={password}
+                                        onChange={e => setPassword(e.target.value)}
+                                        onBlur={() => validate('password')}
+                                        required
+                                    />
+                                    {errors.password && <p className="mt-1 text-xs text-red-500">{errors.password}</p>}
+                                </div>
+                                <div>
+                                    <PasswordInput
+                                        label="Confirm Password"
+                                        id="confirm-password"
+                                        value={confirmPassword}
+                                        onChange={e => setConfirmPassword(e.target.value)}
+                                        onBlur={() => validate('confirmPassword')}
+                                        required
+                                    />
+                                    {errors.confirmPassword && <p className="mt-1 text-xs text-red-500">{errors.confirmPassword}</p>}
+                                </div>
                             </div>
                             
                             {/* Recovery Section */}
