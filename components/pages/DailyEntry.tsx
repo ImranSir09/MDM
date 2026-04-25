@@ -306,7 +306,7 @@ const DailyEntryPage: React.FC = () => {
 
                     <div className="flex justify-end space-x-2">
                         <Button variant="secondary" onClick={() => setReasonModalOpen(false)}>Cancel</Button>
-                        <Button onClick={handleSaveZeroEntry}>Save Entry</Button>
+                        <Button onClick={handleSaveZeroEntry} disabled={!mainReason || (currentSubReasons.length > 0 && !subReason)}>Save Entry</Button>
                     </div>
                 </div>
             </Modal>

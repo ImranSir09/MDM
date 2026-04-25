@@ -94,7 +94,7 @@ const LoginPage: React.FC = () => {
                     />
                     <div className="flex justify-end space-x-2">
                         <Button variant="secondary" onClick={() => setForgotModalOpen(false)}>Cancel</Button>
-                        <Button onClick={handleResetPassword}>Reset Password</Button>
+                        <Button onClick={handleResetPassword} disabled={!securityAnswer || newPassword.length < 6 || confirmNewPassword !== newPassword}>Reset Password</Button>
                     </div>
                 </div>
             </Modal>
@@ -118,7 +118,7 @@ const LoginPage: React.FC = () => {
                                 onChange={e => setPassword(e.target.value)}
                                 required
                             />
-                            <Button type="submit" className="w-full" disabled={isLoading}>
+                            <Button type="submit" className="w-full" disabled={isLoading || password.length === 0}>
                                 {isLoading ? 'Logging in...' : 'Login'}
                             </Button>
                             <button

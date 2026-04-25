@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
-import { AppData, DailyEntry, Receipt, Settings, MonthlyBalanceData, MonthlyBalance, InspectionAuthority, AuthData } from '../types';
+import { AppData, DailyEntry, Receipt, CashbookEntry, Settings, MonthlyBalanceData, MonthlyBalance, InspectionAuthority, AuthData } from '../types';
 import { DEFAULT_SETTINGS } from '../constants';
 import { showToast } from './useToast';
 
@@ -34,6 +34,7 @@ const getInitialData = (): AppData => {
         settings: DEFAULT_SETTINGS,
         entries: [],
         receipts: [],
+        cashbook: [],
         monthlyBalances: {},
         lastBackupDate: undefined,
         welcomeScreenShown: false,
@@ -52,6 +53,7 @@ const getInitialData = (): AppData => {
 
             dataToProcess.entries = Array.isArray(dataToProcess.entries) ? dataToProcess.entries : defaultData.entries;
             dataToProcess.receipts = Array.isArray(dataToProcess.receipts) ? dataToProcess.receipts : defaultData.receipts;
+            dataToProcess.cashbook = Array.isArray(dataToProcess.cashbook) ? dataToProcess.cashbook : defaultData.cashbook;
             dataToProcess.monthlyBalances = isObject(dataToProcess.monthlyBalances) ? dataToProcess.monthlyBalances : defaultData.monthlyBalances;
             
             if (dataToProcess.settings) {
@@ -118,6 +120,8 @@ interface DataContextType {
     deleteEntry: (id: string) => void;
     addReceipt: (receipt: Omit<Receipt, 'id'>) => void;
     deleteReceipt: (id: string) => void;
+    addCashbookEntry: (entry: Omit<CashbookEntry, 'id' | 'balance' | 'voucherNo'>) => void;
+    deleteCashbookEntry: (id: string) => void;
     updateSettings: (settings: Settings) => void;
     saveMonthlyBalance: (monthKey: string, balance: MonthlyBalanceData) => void;
     importData: (importedData: AppData) => void;
@@ -188,6 +192,48 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             ...prevData,
             receipts: prevData.receipts.filter(r => r.id !== id)
         }));
+    }, []);
+
+    const addCashbookEntry = useCallback((entry: Omit<CashbookEntry, 'id' | 'balance' | 'voucherNo'>) => {
+        setData(prevData => {
+            const id = new Date().toISOString();
+            // Generate voucher number logic
+            const dateObj = new Date(entry.date);
+            const yearStr = dateObj.getFullYear().toString().slice(-2);
+            const monthStr = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+            const prefix = `V-${yearStr}${monthStr}-`;
+            const monthEntries = prevData.cashbook.filter(e => e.voucherNo && e.voucherNo.startsWith(prefix));
+            const nextNum = monthEntries.length + 1;
+            const voucherNo = `${prefix}${nextNum.toString().padStart(3, '0')}`;
+
+            const newEntry: CashbookEntry = { ...entry, id, voucherNo, balance: 0 }; // balance will be calculated later during rendering or generation
+            const newCashbook = [...prevData.cashbook, newEntry];
+            newCashbook.sort((a, b) => a.date.localeCompare(b.date));
+            
+            // Recalculate balances
+            let runningBalance = 0;
+            const cashbookWithBalances = newCashbook.map(e => {
+                if (e.type === 'Receipt') runningBalance += e.amount;
+                else if (e.type === 'Payment') runningBalance -= e.amount;
+                return { ...e, balance: runningBalance };
+            });
+
+            return { ...prevData, cashbook: cashbookWithBalances };
+        });
+    }, []);
+
+    const deleteCashbookEntry = useCallback((id: string) => {
+        setData(prevData => {
+            const filtered = prevData.cashbook.filter(e => e.id !== id);
+            // Recalculate balances
+            let runningBalance = 0;
+            const cashbookWithBalances = filtered.map(e => {
+                if (e.type === 'Receipt') runningBalance += e.amount;
+                else if (e.type === 'Payment') runningBalance -= e.amount;
+                return { ...e, balance: runningBalance };
+            });
+            return { ...prevData, cashbook: cashbookWithBalances };
+        });
     }, []);
 
     const updateSettings = useCallback((settings: Settings) => {
@@ -268,6 +314,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             settings: DEFAULT_SETTINGS,
             entries: [],
             receipts: [],
+            cashbook: [],
             monthlyBalances: {},
             lastBackupDate: undefined,
             welcomeScreenShown: false,
@@ -282,6 +329,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         deleteEntry,
         addReceipt,
         deleteReceipt,
+        addCashbookEntry,
+        deleteCashbookEntry,
         updateSettings,
         saveMonthlyBalance,
         importData,

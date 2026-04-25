@@ -9,6 +9,7 @@ import MonthlySummary from './components/pages/MonthlySummary';
 import Receipts from './components/pages/Receipts';
 import Settings from './components/pages/Settings';
 import Reports from './components/pages/Reports';
+import CashbookPage from './components/pages/CashbookPage';
 import Header from './components/layout/Header';
 import Navigation from './components/layout/Navigation';
 import ToastContainer from './components/ui/ToastContainer';
@@ -96,6 +97,7 @@ const AuthenticatedApp: React.FC = () => {
         dashboard: <Dashboard />,
         summary: <MonthlySummary />,
         receipts: <Receipts />,
+        cashbook: <CashbookPage />,
         settings: <Settings />,
         reports: <Reports />,
     };

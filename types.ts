@@ -1,5 +1,5 @@
 
-export type Page = 'dashboard' | 'summary' | 'receipts' | 'settings' | 'reports';
+export type Page = 'dashboard' | 'summary' | 'receipts' | 'cashbook' | 'settings' | 'reports';
 
 export interface Notification {
   id: string; // e.g., 'low-stock', 'backup-reminder'
@@ -160,11 +160,34 @@ export interface AuthData {
     contact?: string;
 }
 
+export type TransactionType = 'Receipt' | 'Payment';
+
+export type HeadOfAccount = 'Opening Balance' | 'Government Grant' | 'Cooking Cost' | 'Food Grains' | 'Transportation' | 'Honorarium' | 'Miscellaneous';
+
+export type PaymentMode = 'Cash' | 'Bank' | 'UPI';
+
+export interface CashbookEntry {
+    id: string;
+    voucherNo: string;
+    date: string;
+    type: TransactionType;
+    headOfAccount: HeadOfAccount;
+    description: string;
+    amount: number;
+    paymentMode: PaymentMode;
+    referenceNo?: string;
+    paidTo?: string; // For Payment
+    receivedFrom?: string; // For Receipt
+    balance: number;
+    enteredBy: string;
+}
+
 export interface AppData {
     auth?: AuthData;
     settings: Settings;
     entries: DailyEntry[];
-    receipts: Receipt[];
+    receipts: Receipt[]; // Old stock receipts
+    cashbook: CashbookEntry[]; // New Cashbook entries
     monthlyBalances: MonthlyBalance;
     lastBackupDate?: string; // ISO string
     welcomeScreenShown?: boolean;

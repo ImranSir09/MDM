@@ -52,7 +52,7 @@ const SetupPage: React.FC = () => {
         return signupKeyInput.trim() === SIGNUP_KEY;
     }, [signupKeyInput]);
 
-    const validate = useCallback((fieldName?: keyof typeof errors) => {
+    const validate = useCallback((fieldName?: keyof typeof errors, updateState: boolean = true) => {
         const newErrors = { ...errors };
         
         const validators: Record<keyof typeof errors, () => string> = {
@@ -96,9 +96,22 @@ const SetupPage: React.FC = () => {
             });
         }
         
-        setErrors(newErrors);
+        if (updateState) {
+            setErrors(newErrors);
+        }
         return Object.values(newErrors).every(error => error === '');
     }, [udise, signupKeyInput, isKeyValid, username, contact, password, confirmPassword, securityAnswer, agreedToTerms, errors]);
+
+    const isFormValid = useMemo(() => {
+        return !!udise && udise.length === 11 && 
+            !!signupKeyInput && isKeyValid && 
+            !!username && 
+            (!contact || /^\d{10}$/.test(contact)) &&
+            !!password && password.length >= 6 &&
+            !!confirmPassword && password === confirmPassword &&
+            !!securityAnswer &&
+            agreedToTerms;
+    }, [udise, signupKeyInput, isKeyValid, username, contact, password, confirmPassword, securityAnswer, agreedToTerms]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -254,7 +267,7 @@ const SetupPage: React.FC = () => {
                                  {errors.terms && <p className="mt-1 text-xs text-red-500">{errors.terms}</p>}
                             </div>
                             
-                            <Button type="submit" className="w-full py-3" disabled={isProcessing}>
+                            <Button type="submit" className="w-full py-3" disabled={isProcessing || !isFormValid}>
                                 {isProcessing ? 'Activating...' : 'Complete Setup'}
                             </Button>
 

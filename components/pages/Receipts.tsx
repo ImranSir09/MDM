@@ -22,6 +22,24 @@ const Receipts: React.FC = () => {
     const [cash, setCash] = useState<Record<Category, string>>({ balvatika: '', primary: '', middle: '' });
     const [receiptToDelete, setReceiptToDelete] = useState<string | null>(null);
 
+    const isFormValid = useMemo(() => {
+        const riceBalance = {
+            balvatika: parseFloat(rice.balvatika) || 0,
+            primary: parseFloat(rice.primary) || 0,
+            middle: parseFloat(rice.middle) || 0,
+        };
+        const cashBalance = {
+            balvatika: parseFloat(cash.balvatika) || 0,
+            primary: parseFloat(cash.primary) || 0,
+            middle: parseFloat(cash.middle) || 0,
+        };
+        
+        const noNegative = !Object.values(riceBalance).some(v => v < 0) && !Object.values(cashBalance).some(v => v < 0);
+        const hasValues = Object.values(riceBalance).some(v => v > 0) || Object.values(cashBalance).some(v => v > 0);
+        
+        return !!date && noNegative && hasValues;
+    }, [date, rice, cash]);
+
     const handleValueChange = (
         setter: React.Dispatch<React.SetStateAction<Record<Category, string>>>,
         category: Category,
@@ -107,7 +125,7 @@ const Receipts: React.FC = () => {
                             </div>
                         </fieldset>
 
-                        <Button type="submit" className="w-full">Save Receipt</Button>
+                        <Button type="submit" className="w-full" disabled={!isFormValid}>Save Receipt</Button>
                     </form>
                 </Card>
                 <Card title="Recent Receipts">
