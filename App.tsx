@@ -84,15 +84,6 @@ const AuthenticatedApp: React.FC = () => {
         return 'dashboard'; // Default for all other sessions
     });
 
-    const [showPaymentModal, setShowPaymentModal] = useState(() => {
-        return !sessionStorage.getItem('paymentModalShown');
-    });
-
-    const handleClosePaymentModal = () => {
-        sessionStorage.setItem('paymentModalShown', 'true');
-        setShowPaymentModal(false);
-    };
-
     const pages: Record<Page, React.ReactElement> = {
         dashboard: <Dashboard />,
         summary: <MonthlySummary />,
@@ -131,26 +122,6 @@ const AuthenticatedApp: React.FC = () => {
                 <Navigation currentPage={currentPage} setCurrentPage={setCurrentPage} />
             </div>
             
-            <Modal isOpen={showPaymentModal} onClose={handleClosePaymentModal} title="Service Continuation">
-                <div className="flex flex-col items-center text-center space-y-4">
-                    <div className="bg-sky-100 dark:bg-sky-900/50 p-4 rounded-full">
-                        <svg className="w-8 h-8 text-sky-600 dark:text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                    </div>
-                    <p className="text-slate-600 dark:text-slate-300">
-                        Please pay a minimum of <strong className="text-slate-800 dark:text-white">₹100/annually</strong> for the continuation of the service.
-                    </p>
-                    <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl w-full border border-slate-100 dark:border-slate-800">
-                        <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">Pay via UPI to:</p>
-                        <p className="text-lg font-mono font-semibold text-indigo-700 dark:text-indigo-400">+919596555467</p>
-                    </div>
-                    <Button onClick={handleClosePaymentModal} className="w-full mt-2">
-                        I Understand
-                    </Button>
-                </div>
-            </Modal>
-
             <ToastContainer />
         </NotificationProvider>
     );

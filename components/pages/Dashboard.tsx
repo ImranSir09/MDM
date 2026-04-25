@@ -18,7 +18,6 @@ const Dashboard: React.FC = () => {
     const { mdmIncharge } = settings;
 
     const [isLoading, setIsLoading] = useState(true);
-    const [showPaymentAlert, setShowPaymentAlert] = useState(true);
 
     // Daily Entry Reminder
     useEffect(() => {
@@ -117,19 +116,6 @@ const Dashboard: React.FC = () => {
     return (
         <div className="space-y-4">
             <IllustrationCard inchargeName={mdmIncharge?.name} inchargeContact={mdmIncharge?.contact} />
-
-            {showPaymentAlert && (
-                <AlertCard 
-                    title="Service Continuation Notice" 
-                    onDismiss={() => setShowPaymentAlert(false)}
-                    action={{
-                        label: "I Understand",
-                        onClick: () => setShowPaymentAlert(false)
-                    }}
-                >
-                    <p>Please pay a minimum of ₹100/annually for continuation of the service by UPI on <strong>+919596555467</strong></p>
-                </AlertCard>
-            )}
 
             <DailyEntryPage />
 

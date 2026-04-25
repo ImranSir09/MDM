@@ -61,6 +61,67 @@ const CashbookPage: React.FC = () => {
     const [receiptPreviewOpen, setReceiptPreviewOpen] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
 
+    const allCombinedEntries = useMemo(() => {
+        const explicitEntries = data.cashbook || [];
+        
+        const autoReceipts = (data.receipts || [])
+            .map(r => {
+                 const totalCash = (r.cash?.balvatika || 0) + (r.cash?.primary || 0) + (r.cash?.middle || 0);
+                 if (totalCash <= 0) return null;
+                 return {
+                     id: `auto-rec-${r.id}`,
+                     voucherNo: `REC-${r.date.replace(/-/g, '')}`,
+                     date: r.date,
+                     type: 'Receipt' as TransactionType,
+                     headOfAccount: 'Cooking Cost' as HeadOfAccount,
+                     description: 'Auto-fetched MDM Grant Receipt',
+                     amount: totalCash,
+                     paymentMode: 'Bank' as PaymentMode,
+                     receivedFrom: 'Govt. Grant',
+                     balance: 0,
+                     enteredBy: 'System',
+                     isAuto: true
+                 };
+            })
+            .filter(Boolean) as (CashbookEntry & { isAuto?: boolean })[];
+
+        const autoPayments = (data.entries || [])
+            .map(e => {
+                 if (!e.consumption || (e.consumption.total || 0) <= 0) return null;
+                 return {
+                     id: `auto-pay-${e.id}`,
+                     voucherNo: `PAY-${e.date.replace(/-/g, '')}`,
+                     date: e.date,
+                     type: 'Payment' as TransactionType,
+                     headOfAccount: 'Cooking Cost' as HeadOfAccount,
+                     description: `Daily MDM Cost (${e.totalPresent} students)`,
+                     amount: e.consumption.total,
+                     paymentMode: 'Cash' as PaymentMode,
+                     paidTo: 'Daily Consumption',
+                     balance: 0,
+                     enteredBy: 'System',
+                     isAuto: true
+                 };
+            })
+            .filter(Boolean) as (CashbookEntry & { isAuto?: boolean })[];
+
+        const combined = [...explicitEntries, ...autoReceipts, ...autoPayments];
+        
+        combined.sort((a, b) => {
+            const dateCmp = a.date.localeCompare(b.date);
+            if (dateCmp !== 0) return dateCmp;
+            if (a.type !== b.type) return a.type === 'Receipt' ? -1 : 1;
+            return 0;
+        });
+
+        let runningBal = 0;
+        return combined.map(e => {
+             if (e.type === 'Receipt') runningBal += e.amount;
+             else if (e.type === 'Payment') runningBal -= e.amount;
+             return { ...e, balance: runningBal, isAuto: (e as any).isAuto };
+        });
+    }, [data.cashbook, data.receipts, data.entries]);
+
     const isFormValid = useMemo(() => {
         const amt = parseFloat(formAmount);
         const amtValid = !isNaN(amt) && amt > 0;
@@ -109,6 +170,11 @@ const CashbookPage: React.FC = () => {
 
     const confirmDelete = () => {
         if (deleteId) {
+            if (deleteId.startsWith('auto-')) {
+                 showToast('Cannot delete auto-generated entries from Cashbook. Please delete from Receipts/Daily entry instead.', 'error');
+                 setDeleteId(null);
+                 return;
+            }
             deleteCashbookEntry(deleteId);
             showToast('Entry deleted successfully.', 'success');
             setDeleteId(null);
@@ -116,7 +182,7 @@ const CashbookPage: React.FC = () => {
     };
 
     const monthEntries = useMemo(() => {
-        let entries = data.cashbook.filter(e => e.date.startsWith(filterMonth));
+        let entries = allCombinedEntries.filter(e => e.date.startsWith(filterMonth));
         if (searchTerm.trim()) {
             const term = searchTerm.toLowerCase();
             entries = entries.filter(e => 
@@ -128,7 +194,7 @@ const CashbookPage: React.FC = () => {
             );
         }
         return entries;
-    }, [data.cashbook, filterMonth, searchTerm]);
+    }, [allCombinedEntries, filterMonth, searchTerm]);
 
     const { totalReceipts, totalPayments, closingBalance, openingBalance } = useMemo(() => {
         let receipts = 0;
@@ -138,21 +204,17 @@ const CashbookPage: React.FC = () => {
             if (e.type === 'Payment') payments += e.amount;
         });
 
-        const sorted = [...data.cashbook].sort((a,b) => a.date.localeCompare(b.date));
-        
-        // Find opening balance string for current month: balance at the end of previous month
-        const prevEntries = sorted.filter(e => e.date < filterMonth + '-01');
+        const prevEntries = allCombinedEntries.filter(e => e.date < filterMonth + '-01');
         const opBal = prevEntries.length > 0 ? prevEntries[prevEntries.length - 1].balance : 0;
-        const currentBal = sorted.length > 0 ? sorted[sorted.length - 1].balance : 0;
-        // The closing balance at current moment for this view might be just based on total data
+        const currentBal = allCombinedEntries.length > 0 ? allCombinedEntries[allCombinedEntries.length - 1].balance : 0;
         
         return { totalReceipts: receipts, totalPayments: payments, closingBalance: currentBal, openingBalance: opBal };
-    }, [data.cashbook, monthEntries, filterMonth]);
+    }, [allCombinedEntries, monthEntries, filterMonth]);
 
     const [pdfPreviewData, setPdfPreviewData] = useState<{ url: string, blob: Blob, filename: string, type: 'receipt' | 'report', id?: string } | null>(null);
 
     const generateReceiptPDF = (receiptId: string) => {
-        const entry = data.cashbook.find(e => e.id === receiptId);
+        const entry = allCombinedEntries.find(e => e.id === receiptId);
         if (!entry) return;
 
         try {
@@ -362,7 +424,11 @@ const CashbookPage: React.FC = () => {
                                                     <div className="text-[10px] text-slate-400 font-mono">{entry.voucherNo}</div>
                                                 </td>
                                                 <td className="p-3">
-                                                    <div className="font-medium text-slate-700 dark:text-slate-300">{entry.headOfAccount} {isLargeTransaction && <span className="inline-flex items-center rounded-full bg-amber-100 px-1.5 py-0.5 text-[8px] font-medium text-amber-800 ml-1">Large Amount</span>}</div>
+                                                    <div className="font-medium text-slate-700 dark:text-slate-300">
+                                                        {entry.headOfAccount} 
+                                                        {isLargeTransaction && <span className="inline-flex items-center rounded-full bg-amber-100 px-1.5 py-0.5 text-[8px] font-medium text-amber-800 ml-1">Large Amount</span>}
+                                                        {(entry as any).isAuto && <span className="inline-flex items-center rounded-full bg-blue-100 px-1.5 py-0.5 text-[8px] font-medium text-blue-800 ml-1">Auto</span>}
+                                                    </div>
                                                     <div className="text-slate-500 line-clamp-1">{entry.description}</div>
                                                     <div className="text-[10px] text-indigo-400 mt-0.5">{entry.paymentMode} {entry.type === 'Payment' ? `• Paid: ${entry.paidTo}` : entry.type === 'Receipt' ? `• From: ${entry.receivedFrom}` : ''}</div>
                                                 </td>
@@ -381,7 +447,7 @@ const CashbookPage: React.FC = () => {
                                                             PDF
                                                         </button>
                                                     )}
-                                                    <button onClick={() => setDeleteId(entry.id)} className="block w-full px-2 py-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded text-[10px]">
+                                                    <button onClick={() => setDeleteId(entry.id)} className={`block w-full px-2 py-1 ${(entry as any).isAuto ? 'text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800' : 'text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20'} rounded text-[10px]`} title={(entry as any).isAuto ? "Auto entries cannot be deleted here" : ""}>
                                                         Del
                                                     </button>
                                                 </td>
