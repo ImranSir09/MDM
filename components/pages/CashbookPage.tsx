@@ -7,6 +7,8 @@ import PDFPreviewModal from '../ui/PDFPreviewModal';
 import { useData } from '../../hooks/useData';
 import { useToast } from '../../hooks/useToast';
 import { CashbookEntry, HeadOfAccount, PaymentMode, TransactionType } from '../../types';
+import { getOpeningBalanceInfo } from '../../services/summaryCalculator';
+
 // Note: jsPDF and AutoTable are included via index.html, accessed via window.jspdf
 
 const HEADS_OF_ACCOUNT: HeadOfAccount[] = [
@@ -127,19 +129,7 @@ const CashbookPage: React.FC = () => {
             return 0;
         });
 
-        let initialCash = 0;
-        if (data.settings && data.settings.initialOpeningBalance && data.settings.initialOpeningBalance.cash) {
-            initialCash = (data.settings.initialOpeningBalance.cash.balvatika || 0) + 
-                          (data.settings.initialOpeningBalance.cash.primary || 0) + 
-                          (data.settings.initialOpeningBalance.cash.middle || 0);
-        }
-
-        let runningBal = initialCash;
-        return combined.map(e => {
-             if (e.type === 'Receipt') runningBal += e.amount;
-             else if (e.type === 'Payment') runningBal -= e.amount;
-             return { ...e, balance: runningBal, isAuto: (e as any).isAuto };
-        });
+        return combined;
     }, [data.cashbook, data.receipts, data.entries]);
 
     const isFormValid = useMemo(() => {
@@ -201,11 +191,30 @@ const CashbookPage: React.FC = () => {
         }
     };
 
-    const monthEntries = useMemo(() => {
+    const { monthEntries, totalReceipts, totalPayments, closingBalance, openingBalance } = useMemo(() => {
+        const { balance } = getOpeningBalanceInfo(data, filterMonth);
+        const opBal = (balance.cash?.balvatika || 0) + (balance.cash?.primary || 0) + (balance.cash?.middle || 0);
+
         let entries = allCombinedEntries.filter(e => e.date.startsWith(filterMonth));
+        let receipts = 0;
+        let payments = 0;
+        let currentBalance = opBal;
+
+        const entriesWithBalance = entries.map(e => {
+            if (e.type === 'Receipt') {
+                receipts += e.amount;
+                currentBalance += e.amount;
+            } else if (e.type === 'Payment') {
+                payments += e.amount;
+                currentBalance -= e.amount;
+            }
+            return { ...e, balance: currentBalance };
+        });
+
+        let filteredEntries = entriesWithBalance;
         if (searchTerm.trim()) {
             const term = searchTerm.toLowerCase();
-            entries = entries.filter(e => 
+            filteredEntries = filteredEntries.filter(e => 
                 e.description.toLowerCase().includes(term) ||
                 e.headOfAccount.toLowerCase().includes(term) ||
                 e.voucherNo.toLowerCase().includes(term) ||
@@ -213,35 +222,15 @@ const CashbookPage: React.FC = () => {
                 (e.receivedFrom && e.receivedFrom.toLowerCase().includes(term))
             );
         }
-        return entries;
-    }, [allCombinedEntries, filterMonth, searchTerm]);
 
-    const { totalReceipts, totalPayments, closingBalance, openingBalance } = useMemo(() => {
-        let receipts = 0;
-        let payments = 0;
-        monthEntries.forEach(e => {
-            if (e.type === 'Receipt') receipts += e.amount;
-            if (e.type === 'Payment') payments += e.amount;
-        });
-
-        const prevEntries = allCombinedEntries.filter(e => e.date < filterMonth + '-01');
-        
-        let initialCash = 0;
-        if (data.settings && data.settings.initialOpeningBalance && data.settings.initialOpeningBalance.cash) {
-            initialCash = (data.settings.initialOpeningBalance.cash.balvatika || 0) + 
-                          (data.settings.initialOpeningBalance.cash.primary || 0) + 
-                          (data.settings.initialOpeningBalance.cash.middle || 0);
-        }
-
-        const opBal = prevEntries.length > 0 ? prevEntries[prevEntries.length - 1].balance : initialCash;
-        
-        let monthEndBalance = opBal;
-        if (monthEntries.length > 0) {
-            monthEndBalance = monthEntries[monthEntries.length - 1].balance;
-        }
-
-        return { totalReceipts: receipts, totalPayments: payments, closingBalance: monthEndBalance, openingBalance: opBal };
-    }, [allCombinedEntries, monthEntries, filterMonth]);
+        return {
+            openingBalance: opBal,
+            closingBalance: currentBalance,
+            monthEntries: filteredEntries,
+            totalReceipts: receipts,
+            totalPayments: payments
+        };
+    }, [allCombinedEntries, filterMonth, searchTerm, data]);
 
     const [pdfPreviewData, setPdfPreviewData] = useState<{ url: string, blob: Blob, filename: string, type: 'receipt' | 'report', id?: string } | null>(null);
 
@@ -408,11 +397,11 @@ const CashbookPage: React.FC = () => {
                 <div className="space-y-4 animate-fade-in text-sm">
                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                         <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl p-3 shadow-sm flex flex-col justify-center">
-                            <p className="text-xs text-slate-500 dark:text-slate-400">Current Balance</p>
-                            <p className={`text-lg font-bold ${closingBalance < 0 ? 'text-red-500' : 'text-indigo-600 dark:text-indigo-400'}`}>
-                                {closingBalance < 0 ? '-' : ''}₹{Math.abs(closingBalance).toFixed(2)}
+                            <p className="text-xs text-slate-500 dark:text-slate-400">Opening Balance</p>
+                            <p className={`text-lg font-bold ${openingBalance < 0 ? 'text-red-500' : 'text-indigo-600 dark:text-indigo-400'}`}>
+                                {openingBalance < 0 ? '-' : ''}₹{Math.abs(openingBalance).toFixed(2)}
                             </p>
-                            {closingBalance < 0 && <span className="text-[10px] text-red-500">Deficit Balance</span>}
+                            {openingBalance < 0 && <span className="text-[10px] text-red-500">Deficit Balance</span>}
                         </div>
                         <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl p-3 shadow-sm flex flex-col justify-center">
                             <p className="text-xs text-slate-500 dark:text-slate-400">Mo. Incoming</p>
