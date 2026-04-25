@@ -1,7 +1,7 @@
 
 // sw.js
 
-const CACHE_NAME = 'pm-poshan-pro-cache-v3';
+const CACHE_NAME = 'pm-poshan-pro-cache-v2';
 // This list should contain the "app shell" - the minimal resources needed to get the app UI showing.
 const urlsToCache = [
   '/', // This is often aliased to index.html
