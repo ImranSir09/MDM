@@ -44,10 +44,16 @@ const getInitialData = (): AppData => {
         const savedData = localStorage.getItem(APP_DATA_KEY);
         if (savedData) {
             const parsedData = JSON.parse(savedData) as Partial<AppData>;
-            let dataToProcess: AppData = {
+            const dataToProcess: AppData = {
                 ...defaultData,
                 ...parsedData,
-                auth: { ...defaultData.auth, ...(parsedData.auth || {}) },
+                auth: { 
+                    username: parsedData.auth?.username || '',
+                    password: parsedData.auth?.password || '',
+                    securityQuestion: parsedData.auth?.securityQuestion || '',
+                    securityAnswer: parsedData.auth?.securityAnswer || '',
+                    contact: parsedData.auth?.contact || '',
+                },
                 settings: deepMerge(DEFAULT_SETTINGS, parsedData.settings || {}),
             };
 
@@ -244,10 +250,11 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setData(prevData => ({ ...prevData, auth: authData }));
     }, []);
 
-    const setupAccountData = useCallback((authData: AuthData) => {
+    const setupAccountData = useCallback((authData: AuthData, udise?: string) => {
         setData(prevData => {
             const newSettings = {
                 ...prevData.settings,
+                udise: udise || prevData.settings.udise,
                 mdmIncharge: {
                     name: authData.username,
                     contact: authData.contact || '',
