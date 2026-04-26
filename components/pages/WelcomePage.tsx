@@ -18,6 +18,9 @@ const WelcomePage: React.FC = () => {
             <div className="container mx-auto max-w-md relative z-10">
                 <Card className="w-full text-center">
                     <div className="p-6">
+                        <div className="flex justify-center mb-6">
+                            <img src="icon.png" alt="PM Poshan Pro" className="w-24 h-24 drop-shadow-lg" />
+                        </div>
                         <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Welcome to PM Poshan Pro!</h1>
                         <p className="mt-4 text-sm text-slate-600 dark:text-slate-300">
                             Thank you for choosing this app to manage your Mid-Day Meal records. I've designed it to be simple, reliable, and completely offline-first.
