@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { useData } from '../../hooks/useData';
 import { useToast } from '../../hooks/useToast';
-import { UtensilsCrossed, ShieldQuestion } from 'lucide-react';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
 import Modal from '../ui/Modal';
@@ -24,8 +23,6 @@ const LoginPage: React.FC = () => {
     const [confirmNewPassword, setConfirmNewPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
-    const [iconError, setIconError] = useState(false);
-    
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
@@ -73,11 +70,6 @@ const LoginPage: React.FC = () => {
             <TermsModal isOpen={isTermsModalOpen} onClose={() => setIsTermsModalOpen(false)} />
             <Modal isOpen={isForgotModalOpen} onClose={() => setForgotModalOpen(false)} title="Reset Password">
                 <div className="space-y-4">
-                    <div className="flex justify-center mb-2">
-                        <div className="p-3 bg-indigo-50 dark:bg-indigo-900/30 rounded-full">
-                            <ShieldQuestion className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
-                        </div>
-                    </div>
                     <div>
                         <p className="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">Your Security Question:</p>
                         <p className="text-sm font-medium text-indigo-700 dark:text-indigo-400 p-3 bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 rounded-xl">
@@ -114,27 +106,10 @@ const LoginPage: React.FC = () => {
                     <div className="animated-blob blob-1 bg-sky-300 dark:bg-sky-900"></div>
                     <div className="animated-blob blob-2 bg-teal-300 dark:bg-teal-900"></div>
                 </div>
-                <div className="w-full max-w-sm z-10 text-center">
-                     <div className="flex justify-center mb-4">
-                        <div className="relative">
-                            <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-sky-500 rounded-2xl blur opacity-25 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
-                            <div className="relative p-4 bg-white dark:bg-slate-900 rounded-2xl shadow-xl">
-                                {!iconError ? (
-                                    <img 
-                                        src="/icon.png" 
-                                        alt="App Icon" 
-                                        className="w-16 h-16 object-contain" 
-                                        onError={() => setIconError(true)} 
-                                    />
-                                ) : (
-                                    <UtensilsCrossed className="w-16 h-16 text-indigo-600 dark:text-indigo-400" />
-                                )}
-                            </div>
-                        </div>
-                     </div>
-                     <div className="mb-4">
+                <div className="w-full max-w-sm z-10">
+                     <div className="text-center mb-4">
                         <h1 className="text-xl font-bold text-slate-900 dark:text-white">Welcome, {data.auth?.username}</h1>
-                        <p className="text-sm text-slate-500 dark:text-slate-300 font-medium uppercase tracking-widest">PM Poshan Pro</p>
+                        <p className="text-sm text-slate-500 dark:text-slate-300">PM Poshan Pro</p>
                     </div>
                     <Card>
                         <form onSubmit={handleLogin} className="space-y-4">

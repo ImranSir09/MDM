@@ -1,8 +1,7 @@
 
 // sw.js
-// IMPORTANT: Increment CACHE_NAME version (e.g., v3 -> v4) after every significant update 
-// to ensure users get the latest version immediately.
-const CACHE_NAME = 'pm-poshan-pro-cache-v5';
+
+const CACHE_NAME = 'pm-poshan-pro-cache-v2';
 // This list should contain the "app shell" - the minimal resources needed to get the app UI showing.
 const urlsToCache = [
   './', 
