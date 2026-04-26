@@ -3,6 +3,7 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../hooks/useToast';
 import { SIGNUP_KEY } from '../../constants';
+import { UtensilsCrossed, School } from 'lucide-react';
 import Card from '../ui/Card';
 import Input from '../ui/Input';
 import Button from '../ui/Button';
@@ -23,6 +24,8 @@ const SetupPage: React.FC = () => {
     // Activation States
     const [udise, setUdise] = useState('');
     const [signupKeyInput, setSignupKeyInput] = useState('');
+    
+    const [iconError, setIconError] = useState(false);
     
     // Account States
     const [username, setUsername] = useState('');
@@ -140,9 +143,26 @@ const SetupPage: React.FC = () => {
         <>
             <TermsModal isOpen={isTermsModalOpen} onClose={() => setIsTermsModalOpen(false)} />
             <div className="min-h-screen font-sans flex items-center justify-center p-4 relative z-10">
-                <div className="w-full max-w-md z-10">
-                    <div className="text-center mb-6">
-                        <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">PM Poshan Pro</h1>
+                <div className="w-full max-w-md z-10 text-center">
+                    <div className="flex justify-center mb-6">
+                        <div className="relative group">
+                            <div className="absolute -inset-1 bg-gradient-to-r from-indigo-600 to-emerald-600 rounded-2xl blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
+                            <div className="relative p-4 bg-white dark:bg-slate-900 rounded-2xl shadow-xl">
+                                {!iconError ? (
+                                    <img 
+                                        src="/icon.png" 
+                                        alt="App Icon" 
+                                        className="w-12 h-12 object-contain" 
+                                        onError={() => setIconError(true)} 
+                                    />
+                                ) : (
+                                    <School className="w-12 h-12 text-indigo-600 dark:text-indigo-400" />
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                    <div className="mb-6">
+                        <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight uppercase tracking-widest">PM Poshan Pro</h1>
                         <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">New School Registration</p>
                     </div>
                     <Card title="App Activation">
